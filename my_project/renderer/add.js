@@ -1,8 +1,10 @@
 const { ipcRenderer } = require('electron')
-const { $ } = require('./helper')
+const { $, getAlbumCover } = require('./helper')
 const path = require('path')
+const jsmediatags = require('jsmediatags')
 
 let musicFilesPath = []
+let fileIndex = 0
 
 $('select-music').addEventListener('click', () => {
     ipcRenderer.send('open-music-file')
@@ -11,6 +13,18 @@ $('select-music').addEventListener('click', () => {
 $('add-music').addEventListener('click', () => {
     if (musicFilesPath.length > 0) {
         ipcRenderer.send('add-tracks', musicFilesPath)
+    }
+})
+
+$('musicList').addEventListener('click', (event) => {
+    event.preventDefault()
+    const { dataset, classList } = event.target
+    const index = dataset && dataset.index
+
+    if ( classList.contains('fa-trash-alt') ) {
+        console.log(classList)
+        musicFilesPath.splice(index, 1)
+        renderListHTML(musicFilesPath)
     }
 })
 
@@ -25,14 +39,18 @@ const renderListHTML = (pathes) => {
                 <b>${path.basename(music)}</b>
             </div>
             <div class="col-1">
-                <b>test</b>
+                <i class="fas fa-trash-alt" data-index="${fileIndex}"></i>
             </div>
         </div>
         </li>`
+        fileIndex += 1
         return html
     }, '')
 
-    musicList.innerHTML = `<ul class="list-group">${musicItemHTML}</ul>`
+    const emptyAddList = `没有添加音乐文件`
+    const noEmptyAddList = `<ul class="list-group">${musicItemHTML}</ul>`
+    musicList.innerHTML = pathes.length ? noEmptyAddList : emptyAddList
+    fileIndex = 0
 }
 
 ipcRenderer.on('selected-file', (event, filesPath) => {

@@ -1,0 +1,11 @@
+.fas:hover {
+    cursor: pointer;
+}
+
+.scroll {
+    overflow: scroll;
+    overflow-y: scroll;
+    height: 350px;
+    width: 700px;
+    border: 1px solid #ccc;
+}

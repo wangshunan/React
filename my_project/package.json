@@ -23,7 +23,10 @@
     "bootstrap": "^4.4.1",
     "electron-store": "^5.1.1",
     "iconv": "^2.3.5",
+    "id3-reader": "0.0.2",
     "jschardet": "^2.1.1",
+    "jsmediatags": "^3.9.3",
+    "node-id3": "^0.1.16",
     "uuid": "^7.0.2"
   }
 }
