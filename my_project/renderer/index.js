@@ -61,14 +61,10 @@ $('tracksList').addEventListener('click', (event)=> {
         const resetIconEle = document.querySelector('.fa-pause')
         if ( resetIconEle ) resetIconEle.classList.replace('fa-pause', 'fa-play')
     }
-
+    console.log('jsmediatags start')
     jsmediatags.read(currentTrack.path, {
         onSuccess: function(tag) {
           var image = tag.tags.picture;
-        //   document.getElementById('title').innerHTML = tag.tags.title;
-        //   document.getElementById('artist').innerHTML= tag.tags.artist;
-        //   document.getElementById('album').innerHTML = tag.tags.album;
-        //   document.getElementById('picture').title = tag.tags.title;
             if (image) {
               var base64String = "";
               for (var i = 0; i < image.data.length; i++) {
@@ -77,17 +73,14 @@ $('tracksList').addEventListener('click', (event)=> {
               var base64 = "data:" + image.format + ";base64," +
                       window.btoa(base64String);
               document.getElementById('picture').setAttribute('src',base64);
-              console.log(base64)
-            } 
-            else {
-              document.getElementById('picture').style.display = "none";
-              document.getElementById('picture').title = "none";
+              console.log('jsmediatags end')
             }
         },
         onError: function(error) {
           console.log(':(', error.type, error.info);
         }
       })
+    console.log('test')
 
     playerButtonControl(classList)
 })

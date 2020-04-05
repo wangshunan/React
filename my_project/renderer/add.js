@@ -12,7 +12,7 @@ $('select-music').addEventListener('click', () => {
 
 $('add-music').addEventListener('click', () => {
     if (musicFilesPath.length > 0) {
-        ipcRenderer.send('add-tracks', musicFilesPath)
+        ipcRenderer.send('get-tracks', musicFilesPath)
     }
 })
 

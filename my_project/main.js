@@ -1,5 +1,5 @@
 // Modules to control application life and create native browser window
-const { dialog, app, BrowserWindow, ipcMain } = require('electron')
+const { dialog, app, BrowserWindow, ipcMain, ipcRenderer } = require('electron')
 const DataStore = require('./renderer/MusicDataStore')
 const myStore = new DataStore({'name': 'Music Data'})
 const remote = require('electron').remote;
@@ -60,10 +60,17 @@ app.on ('ready', () => {
     })
   })
 
+  ipcMain.on('get-tracks', (event, tracks) => {
+    tracks.forEach(track => {
+      myStore.getTracksData(track)
+    })
+  })
+
   ipcMain.on('add-tracks', (event, tracks) => {
-    const updatedTracks = myStore.addTracks(tracks).getTracks()
+    myStore.addTracks(track)
+    console.log(asyncTask)
     mainWindow.send('getTracks', updatedTracks)
-    mainWindow.getChildWindows()[0].close()
+    //mainWindow.getChildWindows()[0].close()
   })
 
   ipcMain.on('delete-track', (event, id) => {
