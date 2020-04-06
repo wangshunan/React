@@ -7,7 +7,7 @@ const remote = require('electron').remote;
 class AppWindow extends BrowserWindow {
   constructor(config, fileLocation){
     const basicConfig = {
-      webPreferences: { 
+      webPreferences: {
         weidth: 800,
         height: 600,
         nodeIntegration: true 
@@ -60,17 +60,9 @@ app.on ('ready', () => {
     })
   })
 
-  ipcMain.on('get-tracks', (event, tracks) => {
-    tracks.forEach(track => {
-      myStore.getTracksData(track)
-    })
-  })
-
-  ipcMain.on('add-tracks', (event, tracks) => {
-    myStore.addTracks(track)
-    console.log(asyncTask)
+  ipcMain.on('add-tracks', async(event, tracks) => {
+    const updatedTracks = await (await myStore.addTracks(tracks)).getTracks()
     mainWindow.send('getTracks', updatedTracks)
-    //mainWindow.getChildWindows()[0].close()
   })
 
   ipcMain.on('delete-track', (event, id) => {
@@ -79,5 +71,5 @@ app.on ('ready', () => {
   })
 
   // Open the DevTools.
-  // mainWindow.webContents.openDevTools()
+  mainWindow.webContents.openDevTools()
 })

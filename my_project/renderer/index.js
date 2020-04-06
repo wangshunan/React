@@ -17,7 +17,7 @@ ipcRenderer.on('getTracks', (event, tracks) => {
 })
 
 musicAudio.addEventListener('loadedmetadata', () => {
-    musicAudio.currentTime = musicAudio.duration - 10
+    musicAudio.currentTime = musicAudio.duration - musicAudio.duration
     renderPlayerHTML(currentTrack, musicAudio.duration)
 })
 
@@ -30,8 +30,10 @@ musicAudio.addEventListener('ended', () => {
 })
 
 const updateProgressHTML = (currentTime) => {
-    const seeker = $('current-seeker')
-    seeker.innerHTML = converDuration(currentTime)
+    if ( currentTrack ) {
+        const seeker = $('current-seeker')
+        seeker.innerHTML = converDuration(currentTime)
+    }
 }
 
 $('tracksList').addEventListener('click', (event)=> {
@@ -41,13 +43,15 @@ $('tracksList').addEventListener('click', (event)=> {
 
     if ( id && classList.contains('fa-trash-alt') ) {
 
-        if ( currentTrack && currentTrack.id === dataset.id ) { 
+        if ( currentTrack && currentTrack.id === dataset.id ) {
             musicAudio.pause()
-            musicAudio.currentTime = 0
+            currentTrack = null
         }
 
         ipcRenderer.send('delete-track', id)
-        resetRenderPlayerHTML()
+        if ( !currentTrack ) {
+            resetRenderPlayerHTML()
+        }
         return
     }
 
@@ -56,33 +60,14 @@ $('tracksList').addEventListener('click', (event)=> {
         currentTrack = allTracks.find(track => track.id === id)
         musicAudio.src = currentTrack.path
         selectedEle = event.target
-
         // last played music icon reset
         const resetIconEle = document.querySelector('.fa-pause')
         if ( resetIconEle ) resetIconEle.classList.replace('fa-pause', 'fa-play')
     }
-    console.log('jsmediatags start')
-    jsmediatags.read(currentTrack.path, {
-        onSuccess: function(tag) {
-          var image = tag.tags.picture;
-            if (image) {
-              var base64String = "";
-              for (var i = 0; i < image.data.length; i++) {
-                  base64String += String.fromCharCode(image.data[i]);
-              }
-              var base64 = "data:" + image.format + ";base64," +
-                      window.btoa(base64String);
-              document.getElementById('picture').setAttribute('src',base64);
-              console.log('jsmediatags end')
-            }
-        },
-        onError: function(error) {
-          console.log(':(', error.type, error.info);
-        }
-      })
-    console.log('test')
 
-    playerButtonControl(classList)
+    if ( id && !classList.contains('fa-trash-alt')) {
+        playerButtonControl(classList)
+    }
 })
 
 $('player-status').addEventListener('click', (event) => {
@@ -104,7 +89,7 @@ const renderListHTML = (tracks) => {
     const tracksListHTML = tracks.reduce((html,track) => {
         html += `<li class="music-track list-group-item row d-flex justify-content-center align-items-center">
             <div class="col-1">
-                <img src= "./test.jpeg" id="picture" width="45" height="45">
+                <img src= ${imageDataChangeToSrc(track.image)} id="picture" width="45" height="45">
             </div>
             <div class="col-9">
                 <b>${track.fileName}</b>
@@ -171,4 +156,16 @@ const playerButtonControl = (buttonClass) => {
         statusPlaybtn.classList.replace('fa-pause', 'fa-play')
         selectedEle.classList.replace('fa-pause', 'fa-play')
     }
+}
+
+const imageDataChangeToSrc = (image) => {
+    if ( image ) {
+        var base64String = "";
+        for (var i = 0; i < image.data.length; i++) {
+            base64String += String.fromCharCode(image.data[i])
+        }
+        var src = "data:" + image.format + ";base64," + window.btoa(base64String)
+    } 
+
+    return image ? src : './test.jpeg'
 }
