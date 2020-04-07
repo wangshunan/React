@@ -25,11 +25,12 @@ class DataStore extends Store {
           tracks.map(async track => {
             var tag = await getTrackTags(track)
             var image = tag.tags.picture
+            console.log(tag.tags)
             return {
               id: uuidv4(),
               path: track,
               fileName: path.basename(track),
-              image: image
+              cover: image ? image : ''
             }
           })
         )

@@ -22,7 +22,6 @@ $('musicList').addEventListener('click', (event) => {
     const index = dataset && dataset.index
 
     if ( classList.contains('fa-trash-alt') ) {
-        console.log(classList)
         musicFilesPath.splice(index, 1)
         renderListHTML(musicFilesPath)
     }

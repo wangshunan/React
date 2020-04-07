@@ -5,7 +5,7 @@ const jsmediatags = require('jsmediatags')
 let musicAudio = new Audio()
 let allTracks
 let currentTrack
-let selectedEle
+let currentEle
 
 $('add-music-button').addEventListener('click', () => {
     ipcRenderer.send('add-music-window')
@@ -17,21 +17,23 @@ ipcRenderer.on('getTracks', (event, tracks) => {
 })
 
 musicAudio.addEventListener('loadedmetadata', () => {
-    musicAudio.currentTime = musicAudio.duration - musicAudio.duration
     renderPlayerHTML(currentTrack, musicAudio.duration)
 })
 
 musicAudio.addEventListener('timeupdate', () => {
-    updateProgressHTML(musicAudio.currentTime)
+    if ( currentTrack ) {
+        updateProgressHTML(musicAudio.currentTime)
+    }
 })
 
 musicAudio.addEventListener('ended', () => {
-    playerButtonControl(selectedEle.classList)
+    nextTrack()
+    playerButtonControl(currentEle.classList)
 })
 
 const updateProgressHTML = (currentTime) => {
-    if ( currentTrack ) {
-        const seeker = $('current-seeker')
+    const seeker = $('current-seeker')
+    if ( seeker ) {
         seeker.innerHTML = converDuration(currentTime)
     }
 }
@@ -52,6 +54,7 @@ $('tracksList').addEventListener('click', (event)=> {
         if ( !currentTrack ) {
             resetRenderPlayerHTML()
         }
+        
         return
     }
 
@@ -59,28 +62,32 @@ $('tracksList').addEventListener('click', (event)=> {
         // new selected music
         currentTrack = allTracks.find(track => track.id === id)
         musicAudio.src = currentTrack.path
-        selectedEle = event.target
-        // last played music icon reset
-        const resetIconEle = document.querySelector('.fa-pause')
-        if ( resetIconEle ) resetIconEle.classList.replace('fa-pause', 'fa-play')
-    }
-
-    if ( id && !classList.contains('fa-trash-alt')) {
-        playerButtonControl(classList)
+        musicAudio.play()
+        currentEle = event.target
     }
 })
 
 $('player-status').addEventListener('click', (event) => {
     event.preventDefault()
-    const classList = $('status-playbtn').classList
+    const { classList } = event.target
+
+    if ( !classList ) return
+
     if( classList.contains('fa-pause') || classList.contains('fa-play') ) {
         playerButtonControl(classList)
     }
 
-    if ( classList && classList.contains('fa-forward') ) {
+    if ( classList.contains('fa-forward') ) {
         musicAudio.currentTime = fastForward(musicAudio.currentTime, musicAudio.duration)
-    } else if ( classList.contains('fa-backward') ) {
+    } 
+    else if ( classList.contains('fa-backward') ) {
         musicAudio.currentTime = fastBackward(musicAudio.currentTime)
+    } 
+    else if ( classList.contains('fa-step-backward') ) {
+        lastTrack()
+    } 
+    else if ( classList.contains('fa-step-forward') ) {
+        nextTrack()
     }
 })
 
@@ -89,7 +96,7 @@ const renderListHTML = (tracks) => {
     const tracksListHTML = tracks.reduce((html,track) => {
         html += `<li class="music-track list-group-item row d-flex justify-content-center align-items-center">
             <div class="col-1">
-                <img src= ${imageDataChangeToSrc(track.image)} id="picture" width="45" height="45">
+                <img src= ${imageDataChangeToSrc(track.cover)} id="picture" width="45" height="45">
             </div>
             <div class="col-9">
                 <b>${track.fileName}</b>
@@ -117,11 +124,11 @@ const renderPlayerHTML = (track ,duration) => {
                     <span id="current-seeker">0:00</span> / ${converDuration(duration)}
                 </div>
                 <div class="col-3">
-                    <i class="fas fa-step-backward"></i>
+                    <i class="fas fa-step-backward data-id="${track.id}"></i>
                     <i class="fas fa-backward"></i>
                     <i id="status-playbtn" class="fas fa-pause mr-2 ml-2" data-id="${track.id}"></i>
                     <i class="fas fa-forward"></i>
-                    <i class="fas fa-step-forward"></i>
+                    <i class="fas fa-step-forward data-id="${track.id}"></i>
                 </div>`
     player.innerHTML = html
 }
@@ -141,31 +148,59 @@ const fastBackward = (currentTime) => {
     return currentTime >= 0 ? currentTime : 0
 }
 
+const lastTrack = () => {
+
+    if ( musicAudio.currentTime >= 3 ) {
+        musicAudio.currentTime = 0
+        return
+    }
+
+    for ( i = 0; i < allTracks.length; i++ ) {
+        if ( allTracks[i].id === currentTrack.id ) {
+            musicAudio.pause()
+            currentTrack = allTracks[ i === 0 ? i : i - 1 ]
+            musicAudio.src = currentTrack.path
+            musicAudio.play()
+            return
+        }
+    }
+}
+
+const nextTrack = () => {
+    for ( i = 0; i < allTracks.length; i++ ) {
+        if ( allTracks[i].id === currentTrack.id ) {
+            musicAudio.pause()
+            currentTrack = allTracks[ i === allTracks.length - 1 ? i : i + 1 ]
+            musicAudio.src = currentTrack.path
+            musicAudio.play()
+            return
+        }
+    }
+}
+
 const playerButtonControl = (buttonClass) => {
     const statusPlaybtn = $('status-playbtn')
     
     if ( buttonClass.contains('fa-play') ) {
         // play music
         musicAudio.play()
-        selectedEle.classList.replace('fa-play', 'fa-pause')
         if ( statusPlaybtn ) statusPlaybtn.classList.replace('fa-play', 'fa-pause')
 
     }else if ( buttonClass.contains('fa-pause') ) {
         // pause music
         musicAudio.pause()
         statusPlaybtn.classList.replace('fa-pause', 'fa-play')
-        selectedEle.classList.replace('fa-pause', 'fa-play')
     }
 }
 
-const imageDataChangeToSrc = (image) => {
-    if ( image ) {
+const imageDataChangeToSrc = (cover) => {
+    if ( cover ) {
         var base64String = "";
-        for (var i = 0; i < image.data.length; i++) {
-            base64String += String.fromCharCode(image.data[i])
+        for (var i = 0; i < cover.data.length; i++) {
+            base64String += String.fromCharCode(cover.data[i])
         }
-        var src = "data:" + image.format + ";base64," + window.btoa(base64String)
+        var src = "data:" + cover.format + ";base64," + window.btoa(base64String)
     } 
 
-    return image ? src : './test.jpeg'
+    return cover ? src : './test.jpeg'
 }

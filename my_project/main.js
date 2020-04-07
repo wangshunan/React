@@ -10,7 +10,7 @@ class AppWindow extends BrowserWindow {
       webPreferences: {
         weidth: 800,
         height: 600,
-        nodeIntegration: true 
+        nodeIntegration: true
       },
       show: false
     }
@@ -45,7 +45,7 @@ app.on ('ready', () => {
       }, './renderer/add.html')
 
       addWindow.setMenu(null)
-      addWindow.webContents.openDevTools()
+      // addWindow.webContents.openDevTools()
     }
   })
 
@@ -63,6 +63,7 @@ app.on ('ready', () => {
   ipcMain.on('add-tracks', async(event, tracks) => {
     const updatedTracks = await (await myStore.addTracks(tracks)).getTracks()
     mainWindow.send('getTracks', updatedTracks)
+    mainWindow.getChildWindows()[0].close()
   })
 
   ipcMain.on('delete-track', (event, id) => {
