@@ -1,5 +1,5 @@
 // Modules to control application life and create native browser window
-const { dialog, app, BrowserWindow, ipcMain, ipcRenderer } = require('electron')
+const { dialog, app, BrowserWindow, ipcMain, screen } = require('electron')
 const DataStore = require('./renderer/MusicDataStore')
 const myStore = new DataStore({'name': 'Music Data'})
 const remote = require('electron').remote;
@@ -8,8 +8,6 @@ class AppWindow extends BrowserWindow {
   constructor(config, fileLocation){
     const basicConfig = {
       webPreferences: {
-        weidth: 800,
-        height: 600,
         nodeIntegration: true
       },
       show: false
@@ -26,7 +24,16 @@ class AppWindow extends BrowserWindow {
 
 app.on ('ready', () => {
   // Create the browser window.
+  let size = screen.getPrimaryDisplay().size 
+  let scaleFactor = screen.getPrimaryDisplay().scaleFactor
+  let dWidth = parseInt(size.width * scaleFactor)
+  let dHeight = parseInt(size.height * scaleFactor)
+
+  console.log(dHeight / 2.16)
+  
   const mainWindow = new AppWindow({
+    width: Math.floor(dWidth / 2.4),
+    height: Math.floor(dHeight / 1.8),
     resizable: false
   }, './renderer/index.html')
   mainWindow.webContents.on('did-finish-load', () => {
@@ -37,8 +44,8 @@ app.on ('ready', () => {
   ipcMain.on('add-music-window', () => {
     if ( mainWindow.getChildWindows().length < 1 ) { 
       const addWindow = new AppWindow({
-        width: 600,
-        height: 500,
+        width: Math.floor(dWidth / 3.2),
+        height: Math.floor(dHeight / 2.16),
         parent: mainWindow,
         modal: true,
         resizable: false

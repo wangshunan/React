@@ -3,6 +3,7 @@ const { $, converDuration } = require('./helper')
 const jsmediatags = require('jsmediatags')
 
 let musicAudio = new Audio()
+let nowVloume
 let allTracks
 let currentTrack
 let currentEle
@@ -96,7 +97,7 @@ const renderListHTML = (tracks) => {
     const tracksListHTML = tracks.reduce((html,track) => {
         html += `<li class="music-track list-group-item row d-flex justify-content-center align-items-center">
             <div class="col-1">
-                <img src= ${imageDataChangeToSrc(track.cover)} id="picture" width="45" height="45">
+                <img src= ${imageDataChangeToSrc(track.cover)} id="picture" class="rounded-circle" width="50" height="50">
             </div>
             <div class="col-9">
                 <b>${track.fileName}</b>
@@ -129,6 +130,7 @@ const renderPlayerHTML = (track ,duration) => {
                     <i id="status-playbtn" class="fas fa-pause mr-2 ml-2" data-id="${track.id}"></i>
                     <i class="fas fa-forward"></i>
                     <i class="fas fa-step-forward data-id="${track.id}"></i>
+                    <input type="range" class="form-control-range" id="formControlRange" />
                 </div>`
     player.innerHTML = html
 }
