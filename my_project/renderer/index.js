@@ -3,41 +3,16 @@ const { $, converDuration } = require('./helper')
 const jsmediatags = require('jsmediatags')
 
 let musicAudio = new Audio()
-let nowVloume
+let currentVloume = 100
 let allTracks
 let currentTrack
 let currentEle
+let playListStyle = 'scroll-1080p'
+let imgSize = 40
 
 $('add-music-button').addEventListener('click', () => {
     ipcRenderer.send('add-music-window')
 })
-
-ipcRenderer.on('getTracks', (event, tracks) => {
-    renderListHTML(tracks)
-    allTracks = tracks
-})
-
-musicAudio.addEventListener('loadedmetadata', () => {
-    renderPlayerHTML(currentTrack, musicAudio.duration)
-})
-
-musicAudio.addEventListener('timeupdate', () => {
-    if ( currentTrack ) {
-        updateProgressHTML(musicAudio.currentTime)
-    }
-})
-
-musicAudio.addEventListener('ended', () => {
-    nextTrack()
-    playerButtonControl(currentEle.classList)
-})
-
-const updateProgressHTML = (currentTime) => {
-    const seeker = $('current-seeker')
-    if ( seeker ) {
-        seeker.innerHTML = converDuration(currentTime)
-    }
-}
 
 $('tracksList').addEventListener('click', (event)=> {
     event.preventDefault()
@@ -52,6 +27,7 @@ $('tracksList').addEventListener('click', (event)=> {
         }
 
         ipcRenderer.send('delete-track', id)
+        
         if ( !currentTrack ) {
             resetRenderPlayerHTML()
         }
@@ -59,11 +35,11 @@ $('tracksList').addEventListener('click', (event)=> {
         return
     }
 
-    if ( id && !(currentTrack && currentTrack.id === dataset.id) ) {
+    if ( id ) {
         // new selected music
         currentTrack = allTracks.find(track => track.id === id)
         musicAudio.src = currentTrack.path
-        musicAudio.play()
+        currentVloume = musicAudio.volume * 100
         currentEle = event.target
     }
 })
@@ -92,18 +68,56 @@ $('player-status').addEventListener('click', (event) => {
     }
 })
 
+ipcRenderer.on('getTracks', (event, tracks) => {
+    renderListHTML(tracks)
+    allTracks = tracks
+})
+
+ipcRenderer.on('setPlayListStyle', (event, resolution) => {
+    playListStyle = 'scroll-' + resolution + 'p'
+    if ( resolution === 1080 ) {
+        imgSize = 40
+    } else if ( resolution === 1440 ) {
+        imgSize = 50
+    }
+})
+
+musicAudio.addEventListener('loadedmetadata', () => {  
+    renderPlayerHTML(currentTrack, musicAudio.duration)
+    musicAudio.play()
+})
+
+musicAudio.addEventListener('timeupdate', () => {
+    if ( currentTrack ) {
+        updateProgressHTML(musicAudio.currentTime)
+    }
+})
+
+musicAudio.addEventListener('ended', () => {
+    nextTrack()
+})
+
+const updateProgressHTML = (currentTime) => {
+    const seeker = $('current-seeker')
+    if ( seeker ) {
+        seeker.innerHTML = converDuration(currentTime)
+    }
+}
+
 const renderListHTML = (tracks) => {
     const tracksList = $('tracksList')
     const tracksListHTML = tracks.reduce((html,track) => {
-        html += `<li class="music-track list-group-item row d-flex justify-content-center align-items-center">
+        html += `<li class="music-track list-group-item row d-flex justify-content-center align-items-center ml-1">
             <div class="col-1">
-                <img src= ${imageDataChangeToSrc(track.cover)} id="picture" class="rounded-circle" width="50" height="50">
+                <img src= ${imgDataChangeToSrc(track.cover)} id="picture" class="rounded-circle" width="${imgSize}" height="${imgSize}">
             </div>
             <div class="col-9">
                 <b>${track.fileName}</b>
             </div>
-            <div class="col-2">
-                <i class="fas fa-play ml-4 mr-4" data-id="${track.id}"></i>
+            <div class="col-1">
+                <i class="fas fa-play ml-4 mr-2" data-id="${track.id}"></i>
+            </div>
+            <div class="col-1">
                 <i class="fas fa-trash-alt" data-id="${track.id}"></i>
             </div>
         </div>
@@ -111,28 +125,40 @@ const renderListHTML = (tracks) => {
         return html
     }, '')
 
-    const trackHTML = `<ul class="list-group scroll">${tracksListHTML}</ul>`
+    const trackHTML = `<ul class="container list-group scroll ${playListStyle}">${tracksListHTML}</ul>`
     const emptyTrackHTML = `没有音乐文件`
     tracksList.innerHTML = tracks.length ? trackHTML : emptyTrackHTML
 }
 
 const renderPlayerHTML = (track ,duration) => {
     const player = $('player-status')
-    const html = `<div class="col-6 font-weight-bold">
+    const html = `<div class="col-5 font-weight-bold">
                     正在播放: ${track.fileName}
                 </div>
-                <div class="col-3">
+                <div class="col-3" align="right">
                     <span id="current-seeker">0:00</span> / ${converDuration(duration)}
                 </div>
-                <div class="col-3">
-                    <i class="fas fa-step-backward data-id="${track.id}"></i>
+                <div class="col-2 pr-0" align="right">
+                    <i class="fas fa-step-backward" data-id="${track.id}"></i>
                     <i class="fas fa-backward"></i>
-                    <i id="status-playbtn" class="fas fa-pause mr-2 ml-2" data-id="${track.id}"></i>
+                    <i id="status-playbtn" class="fas fa-pause mr-1 ml-1" data-id="${track.id}"></i>
                     <i class="fas fa-forward"></i>
-                    <i class="fas fa-step-forward data-id="${track.id}"></i>
-                    <input type="range" class="form-control-range" id="formControlRange" />
+                    <i class="fas fa-step-forward" data-id="${track.id}"></i>
+                    <i class="fas fa-volume-up"></i>
+                </div>
+                <div class="col-1 pl-2">
+                    <input type="range" class="form-control-range" id="formControlRange" value="${currentVloume}"/>
                 </div>`
     player.innerHTML = html
+
+    const rangeBtn = $('formControlRange')
+    if ( rangeBtn ) {
+        rangeBtn.addEventListener('input', (event) => {
+            console.log(event)
+            setVolume(event.target.value)
+            setRange(event.target.style)
+        })
+    }
 }
 
 const resetRenderPlayerHTML = () => {
@@ -162,7 +188,6 @@ const lastTrack = () => {
             musicAudio.pause()
             currentTrack = allTracks[ i === 0 ? i : i - 1 ]
             musicAudio.src = currentTrack.path
-            musicAudio.play()
             return
         }
     }
@@ -174,7 +199,6 @@ const nextTrack = () => {
             musicAudio.pause()
             currentTrack = allTracks[ i === allTracks.length - 1 ? i : i + 1 ]
             musicAudio.src = currentTrack.path
-            musicAudio.play()
             return
         }
     }
@@ -195,7 +219,7 @@ const playerButtonControl = (buttonClass) => {
     }
 }
 
-const imageDataChangeToSrc = (cover) => {
+const imgDataChangeToSrc = (cover) => {
     if ( cover ) {
         var base64String = "";
         for (var i = 0; i < cover.data.length; i++) {
@@ -204,5 +228,14 @@ const imageDataChangeToSrc = (cover) => {
         var src = "data:" + cover.format + ";base64," + window.btoa(base64String)
     } 
 
-    return cover ? src : './test.jpeg'
+    return cover ? src : './default.PNG'
+}
+
+const setVolume = (value) => {
+    musicAudio.volume = value / 100
+    currentVloume = musicAudio.volume
+}
+
+const setRange = (target) => {
+    target.backgroundSize = (currentVloume * 100).toString() + '% ' + '100%'
 }

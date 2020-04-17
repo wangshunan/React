@@ -19,7 +19,6 @@ class DataStore extends Store {
     }
 
     async addTracks(tracks) {
-
       const tracksWithProps = 
         await Promise.all( 
           tracks.map(async track => {

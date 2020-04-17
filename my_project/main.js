@@ -4,6 +4,7 @@ const DataStore = require('./renderer/MusicDataStore')
 const myStore = new DataStore({'name': 'Music Data'})
 const remote = require('electron').remote;
 
+// Parent window class
 class AppWindow extends BrowserWindow {
   constructor(config, fileLocation){
     const basicConfig = {
@@ -23,29 +24,31 @@ class AppWindow extends BrowserWindow {
 }
 
 app.on ('ready', () => {
-  // Create the browser window.
-  let size = screen.getPrimaryDisplay().size 
-  let scaleFactor = screen.getPrimaryDisplay().scaleFactor
-  let dWidth = parseInt(size.width * scaleFactor)
-  let dHeight = parseInt(size.height * scaleFactor)
+  // Get screen size 
+  const size = screen.getPrimaryDisplay().size 
+  const scaleFactor = screen.getPrimaryDisplay().scaleFactor
+  const dWidth = parseInt(size.width * scaleFactor)
+  const dHeight = parseInt(size.height * scaleFactor)
 
-  console.log(dHeight / 2.16)
-  
+  // Create main window
   const mainWindow = new AppWindow({
-    width: Math.floor(dWidth / 2.4),
-    height: Math.floor(dHeight / 1.8),
+    width: parseInt(dWidth / 2.4),
+    height: parseInt(dHeight / 1.8),
     resizable: false
   }, './renderer/index.html')
+  // Load play list
   mainWindow.webContents.on('did-finish-load', () => {
     const updatedTracks = myStore.getTracks()
+    mainWindow.send('setPlayListStyle', dHeight)
     mainWindow.send('getTracks', updatedTracks)
   })
 
+  // Create add window
   ipcMain.on('add-music-window', () => {
     if ( mainWindow.getChildWindows().length < 1 ) { 
       const addWindow = new AppWindow({
-        width: Math.floor(dWidth / 3.2),
-        height: Math.floor(dHeight / 2.16),
+        width: parseInt(dWidth / 3.2),
+        height: parseInt(dHeight / 2.16),
         parent: mainWindow,
         modal: true,
         resizable: false
@@ -56,6 +59,7 @@ app.on ('ready', () => {
     }
   })
 
+  // Open music file
   ipcMain.on('open-music-file', (event) => {
     dialog.showOpenDialog({
       properties: ['openFile', 'multiSelections'],
@@ -67,12 +71,14 @@ app.on ('ready', () => {
     })
   })
 
+  // Add tracks
   ipcMain.on('add-tracks', async(event, tracks) => {
     const updatedTracks = await (await myStore.addTracks(tracks)).getTracks()
     mainWindow.send('getTracks', updatedTracks)
     mainWindow.getChildWindows()[0].close()
   })
 
+  // Delete track
   ipcMain.on('delete-track', (event, id) => {
     const updatedTracks = myStore.deleteTrack(id).getTracks()
     mainWindow.send('getTracks', updatedTracks)
