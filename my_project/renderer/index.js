@@ -9,6 +9,7 @@ let currentTrack
 let currentEle
 let playListStyle = 'scroll-1080p'
 let imgSize = 40
+const defalutCover = '../assets/1.png'
 
 $('add-music-button').addEventListener('click', () => {
     ipcRenderer.send('add-music-window')
@@ -154,11 +155,11 @@ const renderPlayerHTML = (track ,duration) => {
     const rangeBtn = $('formControlRange')
     if ( rangeBtn ) {
         rangeBtn.addEventListener('input', (event) => {
-            console.log(event)
             setVolume(event.target.value)
             setRange(event.target.style)
         })
     }
+    setRange(rangeBtn.style)
 }
 
 const resetRenderPlayerHTML = () => {
@@ -228,14 +229,14 @@ const imgDataChangeToSrc = (cover) => {
         var src = "data:" + cover.format + ";base64," + window.btoa(base64String)
     } 
 
-    return cover ? src : './default.PNG'
+    return cover ? src : defalutCover
 }
 
 const setVolume = (value) => {
     musicAudio.volume = value / 100
-    currentVloume = musicAudio.volume
+    currentVloume = value
 }
 
-const setRange = (target) => {
-    target.backgroundSize = (currentVloume * 100).toString() + '% ' + '100%'
+const setRange = (style) => {
+    style.backgroundSize = currentVloume + '% ' + '100%'
 }

@@ -2,7 +2,6 @@
 const { dialog, app, BrowserWindow, ipcMain, screen } = require('electron')
 const DataStore = require('./renderer/MusicDataStore')
 const myStore = new DataStore({'name': 'Music Data'})
-const remote = require('electron').remote;
 
 // Parent window class
 class AppWindow extends BrowserWindow {
@@ -85,5 +84,5 @@ app.on ('ready', () => {
   })
 
   // Open the DevTools.
-  mainWindow.webContents.openDevTools()
+   mainWindow.webContents.openDevTools()
 })
